@@ -55,7 +55,7 @@ export function LandingPage() {
           <div className="grid gap-4 sm:grid-cols-3" id="flow">
             {[
               { title: 'Guided intake', body: 'Capture demographics, conditions, and medications before chat.' },
-              { title: 'Claude-powered chat', body: 'Multi-turn symptom exploration with gentle clinical tone.' },
+              { title: 'Gemini-powered chat', body: 'Multi-turn symptom exploration with gentle clinical tone.' },
               { title: 'Risk + dashboard', body: 'RandomForest risk score, care band, charts, and PDF export.' },
             ].map((item, idx) => (
               <motion.div

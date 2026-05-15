@@ -1,13 +1,11 @@
-from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_google_genai import ChatGoogleGenerativeAI
 
 from app.config import settings
 
-MODEL_NAME = "claude-sonnet-4-20250514"
-
-SYSTEM_PROMPT = """You are Healio, a calm, professional clinical triage assistant for a hackathon demo.
+SYSTEM_PROMPT = """You are Healio, a calm, professional clinical triage assistant.
 Your role is to collect symptom information through brief, empathetic follow-up questions.
 Ask about: location of symptoms, duration, severity (1-10), and associated symptoms such as fever, breathlessness, nausea, dizziness, chest pain, or confusion.
 Do not provide a definitive diagnosis. After 3-6 user replies with useful detail, you may summarize what you heard and invite the user to request their triage assessment in the app.
@@ -15,14 +13,15 @@ Never claim to replace a doctor. If the user reports chest pain, difficulty brea
 Keep replies concise (2-4 short paragraphs max)."""
 
 
-def build_llm() -> ChatAnthropic:
-    if not settings.anthropic_api_key:
-        raise ValueError("ANTHROPIC_API_KEY is not configured")
-    return ChatAnthropic(
-        model=MODEL_NAME,
+def build_llm() -> ChatGoogleGenerativeAI:
+    key = settings.effective_gemini_key()
+    if not key:
+        raise ValueError("GEMINI_API_KEY or GOOGLE_API_KEY is not configured")
+    return ChatGoogleGenerativeAI(
+        model=settings.gemini_model,
         temperature=0.25,
-        api_key=settings.anthropic_api_key,
-        max_tokens=900,
+        google_api_key=key,
+        max_output_tokens=900,
     )
 
 

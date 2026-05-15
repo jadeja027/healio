@@ -80,8 +80,8 @@ def append_message(session_id: UUID, payload: MessageIn, db: Session = Depends(g
         reply_text = generate_assistant_reply(history, payload.content)
     except ValueError:
         reply_text = (
-            "Healio triage chat is offline because ANTHROPIC_API_KEY is not set on the server. "
-            "Configure the key, restart the API, and try again."
+            "Healio triage chat is offline because GEMINI_API_KEY (or GOOGLE_API_KEY) is not set on the server. "
+            "Add your Google AI Studio key to .env, restart the API, and try again."
         )
     except Exception as exc:  # noqa: BLE001
         reply_text = f"The assistant hit an error: {exc!s}. Please retry in a moment."

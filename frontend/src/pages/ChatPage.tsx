@@ -141,7 +141,7 @@ export function ChatPage() {
         <Card className="flex flex-1 flex-col overflow-hidden">
           <CardHeader className="border-b border-slate-200 dark:border-slate-800">
             <CardTitle>Conversation</CardTitle>
-            <CardDescription>Claude asks concise follow-ups; history stays in PostgreSQL for this session.</CardDescription>
+            <CardDescription>Gemini asks concise follow-ups; history stays in your session database.</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-1 flex-col gap-3 p-0">
             <div className="max-h-[520px] flex-1 space-y-3 overflow-y-auto px-4 py-4 sm:px-6">

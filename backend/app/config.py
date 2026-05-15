@@ -8,10 +8,16 @@ _DEFAULT_SQLITE_URL = "sqlite:///" + (_BACKEND_DIR / "healio.db").resolve().as_p
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_file=_BACKEND_DIR / ".env", extra="ignore")
 
     database_url: str = _DEFAULT_SQLITE_URL
-    anthropic_api_key: str = ""
+    # Google AI Studio / Gemini (https://aistudio.google.com/apikey)
+    gemini_api_key: str = ""
+    google_api_key: str = ""
+    gemini_model: str = "gemini-2.0-flash"
+
+    def effective_gemini_key(self) -> str:
+        return (self.gemini_api_key or self.google_api_key).strip()
 
 
 settings = Settings()

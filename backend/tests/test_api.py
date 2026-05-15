@@ -2,7 +2,10 @@
 
 from fastapi.testclient import TestClient
 
+from app.database import Base, engine
 from app.main import app
+
+Base.metadata.create_all(bind=engine)
 
 client = TestClient(app)
 
@@ -30,7 +33,7 @@ def test_create_session_returns_id_and_patient():
     assert data["patient"]["age"] == SAMPLE_PATIENT["age"]
 
 
-def test_chat_message_without_anthropic_key_returns_fallback_assistant():
+def test_chat_message_without_gemini_key_returns_fallback_assistant():
     created = client.post("/api/sessions", json={"patient": SAMPLE_PATIENT}).json()
     session_id = created["id"]
 

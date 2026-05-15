@@ -327,7 +327,7 @@ export function ResultsPage() {
         <Card>
           <CardHeader>
             <CardTitle>Manual symptom overrides</CardTitle>
-            <CardDescription>Useful for hackathon judges — tweak inputs and re-run the RandomForest.</CardDescription>
+            <CardDescription>Useful for demos — tweak inputs and re-run the RandomForest.</CardDescription>
           </CardHeader>
           <CardContent>
             <SymptomControls symptoms={symptoms} onChange={setSymptoms} />
