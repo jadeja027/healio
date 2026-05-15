@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+backend/models/*.joblib
+backend/data/symptoms_training.csv
+backend/healio.db
+node_modules/
+dist/
+.DS_Store
