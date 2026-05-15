@@ -34,6 +34,7 @@ class SessionOut(BaseModel):
 
 class MessageIn(BaseModel):
     content: str = Field(..., min_length=1, max_length=8000)
+    body_map: Optional["BodyMapPayload"] = None
 
 
 class MessageOut(BaseModel):
@@ -56,9 +57,16 @@ class SymptomFeatures(BaseModel):
     severity: int = Field(default=5, ge=1, le=10)
 
 
+class BodyMapPayload(BaseModel):
+    body_areas: List[str] = Field(default_factory=list)
+    pain_level: int = Field(default=5, ge=1, le=10)
+    summary: str = ""
+
+
 class AssessRequest(BaseModel):
     symptoms: SymptomFeatures
     conversation_text: str = ""
+    body_map: Optional[BodyMapPayload] = None
 
 
 class AssessOut(BaseModel):
@@ -70,3 +78,4 @@ class AssessOut(BaseModel):
     emergency: bool
     emergency_reasons: List[str]
     severity_breakdown: Dict[str, float]
+    body_map_summary: str = ""

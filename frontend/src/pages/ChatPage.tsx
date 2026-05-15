@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
 
 import { assessSession, fetchMessages, sendMessage } from '@/api/client'
+import { BodyMapContainer } from '@/components/BodyMap/BodyMapContainer'
+import { EmergencyDetector } from '@/components/BodyMap/EmergencyDetector'
 import { EmergencyOverlay } from '@/components/EmergencyOverlay'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { Button } from '@/components/ui/button'
@@ -11,6 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Progress } from '@/components/ui/progress'
+import { BodyMapProvider, useBodyMap } from '@/contexts/BodyMapContext'
 import { conversationPlain, detectLocalEmergency, inferSymptomsFromText } from '@/lib/symptomInference'
 import type { ChatMessage, PatientOnboarding, SymptomFeatures } from '@/types'
 
@@ -24,11 +27,12 @@ const defaultSymptoms: SymptomFeatures = {
   severity: 5,
 }
 
-export function ChatPage() {
+function ChatPageContent() {
   const { sessionId } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
   const patient = (location.state as { patient?: PatientOnboarding } | null)?.patient
+  const { payload: bodyMapPayload } = useBodyMap()
 
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState('')
@@ -65,7 +69,7 @@ export function ChatPage() {
   useEffect(() => {
     const lastUser = [...messages].reverse().find((m) => m.role === 'user')
     if (lastUser && detectLocalEmergency(lastUser.content)) {
-      setEmergencyReasons(['Potential emergency language detected in your message'])
+      setEmergencyReasons((prev) => Array.from(new Set([...prev, 'Potential emergency language detected in your message'])))
       setEmergencyOpen(true)
     }
   }, [messages])
@@ -78,7 +82,7 @@ export function ChatPage() {
     const content = input.trim()
     setInput('')
     try {
-      const pair = await sendMessage(sessionId, content)
+      const pair = await sendMessage(sessionId, content, bodyMapPayload)
       setMessages((prev) => {
         const map = new Map(prev.map((m) => [m.id, m]))
         for (const m of pair) map.set(m.id, m)
@@ -96,8 +100,8 @@ export function ChatPage() {
     setAssessing(true)
     setError(null)
     try {
-      const convo = conversationPlain(messages)
-      const result = await assessSession(sessionId, symptoms, convo)
+      const convo = [conversationPlain(messages), bodyMapPayload.summary].filter(Boolean).join('\n')
+      const result = await assessSession(sessionId, symptoms, convo, bodyMapPayload)
       const latest = await fetchMessages(sessionId)
       if (result.emergency) {
         setEmergencyReasons(result.emergency_reasons)
@@ -117,7 +121,19 @@ export function ChatPage() {
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-4 px-4 py-6 sm:px-6 lg:flex-row">
-      <EmergencyOverlay open={emergencyOpen} reasons={emergencyReasons} onAcknowledge={() => setEmergencyOpen(false)} />
+      <EmergencyDetector
+        transcript={transcript}
+        onTrigger={(reasons) => {
+          setEmergencyReasons((prev) => Array.from(new Set([...prev, ...reasons])))
+          setEmergencyOpen(true)
+        }}
+      />
+      <EmergencyOverlay
+        open={emergencyOpen}
+        reasons={emergencyReasons}
+        transcript={transcript}
+        onAcknowledge={() => setEmergencyOpen(false)}
+      />
 
       <div className="flex flex-1 flex-col gap-4">
         <div className="flex items-center justify-between">
@@ -209,6 +225,15 @@ export function ChatPage() {
       >
         <Card>
           <CardHeader>
+            <CardTitle className="text-base">Body pain mapping</CardTitle>
+            <CardDescription>Tap areas to help the triage model understand symptom location and severity.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <BodyMapContainer />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
             <CardTitle className="text-base">Symptom signals</CardTitle>
             <CardDescription>Fine-tune what the risk model sees. Text inference updates toggles automatically.</CardDescription>
           </CardHeader>
@@ -268,5 +293,13 @@ export function ChatPage() {
         </Card>
       </motion.aside>
     </div>
+  )
+}
+
+export function ChatPage() {
+  return (
+    <BodyMapProvider>
+      <ChatPageContent />
+    </BodyMapProvider>
   )
 }

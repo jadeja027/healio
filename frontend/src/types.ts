@@ -25,6 +25,12 @@ export type SymptomFeatures = {
   severity: number
 }
 
+export type BodyMapPayload = {
+  body_areas: string[]
+  pain_level: number
+  summary: string
+}
+
 export type AssessResult = {
   risk_score: number
   triage_band: 'home' | 'clinic' | 'er'
@@ -34,6 +40,7 @@ export type AssessResult = {
   emergency: boolean
   emergency_reasons: string[]
   severity_breakdown: Record<string, number>
+  body_map_summary?: string
 }
 
 export type Session = {
@@ -44,4 +51,23 @@ export type Session = {
   triage_band: string | null
   assessment_json: AssessResult | null
   symptom_snapshot: SymptomFeatures | null
+}
+
+export type EmergencyHospital = {
+  id: string
+  name: string
+  latitude: number
+  longitude: number
+  distance_km: number
+  emergency_score: number
+  emergency: string
+  phone: string
+  website: string
+  operator: string
+}
+
+export type EmergencyPrecautions = {
+  title: string
+  precautions: string[]
+  severity: string
 }

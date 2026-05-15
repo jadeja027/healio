@@ -1,4 +1,13 @@
-import type { AssessResult, ChatMessage, PatientOnboarding, Session, SymptomFeatures } from '@/types'
+import type {
+  AssessResult,
+  BodyMapPayload,
+  ChatMessage,
+  EmergencyHospital,
+  EmergencyPrecautions,
+  PatientOnboarding,
+  Session,
+  SymptomFeatures,
+} from '@/types'
 
 const jsonHeaders = { 'Content-Type': 'application/json' }
 
@@ -41,20 +50,45 @@ export async function fetchMessages(sessionId: string): Promise<ChatMessage[]> {
   return handle<ChatMessage[]>(res)
 }
 
-export async function sendMessage(sessionId: string, content: string): Promise<ChatMessage[]> {
+export async function sendMessage(sessionId: string, content: string, bodyMap?: BodyMapPayload): Promise<ChatMessage[]> {
   const res = await fetch(apiUrl(`/api/sessions/${sessionId}/messages`), {
     method: 'POST',
     headers: jsonHeaders,
-    body: JSON.stringify({ content }),
+    body: JSON.stringify({ content, body_map: bodyMap }),
   })
   return handle<ChatMessage[]>(res)
 }
 
-export async function assessSession(sessionId: string, symptoms: SymptomFeatures, conversationText: string): Promise<AssessResult> {
+export async function assessSession(
+  sessionId: string,
+  symptoms: SymptomFeatures,
+  conversationText: string,
+  bodyMap?: BodyMapPayload,
+): Promise<AssessResult> {
   const res = await fetch(apiUrl(`/api/sessions/${sessionId}/assess`), {
     method: 'POST',
     headers: jsonHeaders,
-    body: JSON.stringify({ symptoms, conversation_text: conversationText }),
+    body: JSON.stringify({ symptoms, conversation_text: conversationText, body_map: bodyMap }),
   })
   return handle<AssessResult>(res)
+}
+
+export async function fetchNearbyHospitals(latitude: number, longitude: number, radiusKm = 15): Promise<EmergencyHospital[]> {
+  const res = await fetch(apiUrl('/api/emergency/nearby-hospitals'), {
+    method: 'POST',
+    headers: jsonHeaders,
+    body: JSON.stringify({ latitude, longitude, radius_km: radiusKm }),
+  })
+  const data = await handle<{ success: boolean; hospitals: EmergencyHospital[]; error?: string }>(res)
+  if (!data.success) {
+    throw new Error(data.error || 'Unable to fetch hospitals')
+  }
+  return data.hospitals
+}
+
+export async function fetchEmergencyPrecautions(symptom?: string): Promise<EmergencyPrecautions> {
+  const query = symptom ? `?symptom=${encodeURIComponent(symptom)}` : ''
+  const res = await fetch(apiUrl(`/api/emergency/precautions${query}`))
+  const data = await handle<{ success: boolean; precautions: EmergencyPrecautions }>(res)
+  return data.precautions
 }

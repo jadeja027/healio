@@ -23,6 +23,17 @@ def _sid(session_id: UUID) -> str:
     return str(session_id)
 
 
+def _body_map_context(body_map) -> str:
+    if not body_map:
+        return ""
+    areas = body_map.body_areas or []
+    if not areas:
+        return ""
+    parts = ", ".join(areas)
+    pain = body_map.pain_level
+    return f"Body map selection: {parts}. Pain level {pain}/10."
+
+
 @router.post("", response_model=SessionOut)
 def create_session(payload: SessionCreate, db: Session = Depends(get_db)):
     row = SessionRecord(patient=payload.patient.model_dump())
@@ -77,7 +88,11 @@ def append_message(session_id: UUID, payload: MessageIn, db: Session = Depends(g
         history.append((m.role, m.content))
 
     try:
-        reply_text = generate_assistant_reply(history, payload.content)
+        body_context = _body_map_context(payload.body_map)
+        llm_input = payload.content
+        if body_context:
+            llm_input = f"{body_context}\n\nUser message: {payload.content}"
+        reply_text = generate_assistant_reply(history, llm_input)
     except ValueError:
         reply_text = (
             "Healio triage chat is offline because GEMINI_API_KEY (or GOOGLE_API_KEY) is not set on the server. "
@@ -102,6 +117,8 @@ def assess_session(session_id: UUID, payload: AssessRequest, db: Session = Depen
         raise HTTPException(status_code=404, detail="Session not found")
 
     convo_parts = [payload.conversation_text]
+    if payload.body_map and payload.body_map.summary:
+        convo_parts.append(f"body_map: {payload.body_map.summary}")
     for m in (
         db.query(MessageRecord)
         .filter(MessageRecord.session_id == sid)
@@ -112,7 +129,8 @@ def assess_session(session_id: UUID, payload: AssessRequest, db: Session = Depen
     conversation_text = "\n".join(convo_parts)
 
     symptoms = payload.symptoms.model_dump()
-    result = build_assessment(row.patient, symptoms, conversation_text)
+    body_map = payload.body_map.model_dump() if payload.body_map else None
+    result = build_assessment(row.patient, symptoms, conversation_text, body_map=body_map)
 
     row.symptom_snapshot = symptoms
     row.risk_score = result["risk_score"]

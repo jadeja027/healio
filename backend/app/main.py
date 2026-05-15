@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import Base, engine
-from app.routers import sessions
+from app.routers import emergency, sessions
 
 app = FastAPI(title="Healio Triage API", version="0.1.0")
 
@@ -21,6 +21,7 @@ def on_startup():
 
 
 app.include_router(sessions.router)
+app.include_router(emergency.router)
 
 
 @app.get("/health")
